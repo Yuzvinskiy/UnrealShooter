@@ -1,11 +1,14 @@
 // UnrealShooter
 
 #include "Components/USHealthComponent.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/Controller.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
-
-//DEFINE_LOG_CATEGORY_STATIC(LogHealthComponent, All, All)
+#include "Camera/CameraShakeBase.h"
+#include "UnrealShooter/USGameModeBase.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Perception/AISense_Damage.h"
 
 UUSHealthComponent::UUSHealthComponent()
 {
@@ -18,16 +21,37 @@ void UUSHealthComponent::BeginPlay()
 
     check(MaxHealth > 0)
 
-    SetHealth(MaxHealth);
+        SetHealth(MaxHealth);
 
     AActor* ComponentOwner = GetOwner();
     if (ComponentOwner)
     {
         ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &UUSHealthComponent::OnTakeAnyDamage);
+        ComponentOwner->OnTakePointDamage.AddDynamic(this, &UUSHealthComponent::OnTakePointDamage);
+        ComponentOwner->OnTakeRadialDamage.AddDynamic(this, &UUSHealthComponent::OnTakeRadialDamage);
     }
 }
+void UUSHealthComponent::OnTakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation,
+    class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType,
+    AActor* DamageCauser)
+{
+    const auto FinalDamage = Damage * GetPointDamageModifier(DamagedActor, BoneName);
+    ApplyDamage(FinalDamage, InstigatedBy);
+}
+
+void UUSHealthComponent::OnTakeRadialDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, FVector Origin,
+    FHitResult HitInfo, class AController* InstigatedBy, AActor* DamageCauser)
+{
+    ApplyDamage(Damage, InstigatedBy);
+}
+
 void UUSHealthComponent::OnTakeAnyDamage(
     AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+{
+   
+}
+
+void UUSHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy) 
 {
     if (Damage <= 0.0f || IsDead() || !GetWorld()) return;
 
@@ -37,19 +61,22 @@ void UUSHealthComponent::OnTakeAnyDamage(
 
     if (IsDead())
     {
+        Killed(InstigatedBy);
         OnDeath.Broadcast();
     }
     else if (AutoHeal)
     {
         GetWorld()->GetTimerManager().SetTimer(HealTimerHandle, this, &UUSHealthComponent::HealUpdate, HealUpdateTime, true, HealDelay);
     }
+    PlayCameraShake();
+    ReportDamageEvent(Damage, InstigatedBy);
 }
 
 void UUSHealthComponent::HealUpdate()
 {
     SetHealth(Health + HealModifier);
 
-    if (FMath::IsNearlyEqual(Health , MaxHealth) && GetWorld())
+    if (IsHealthFull() && GetWorld())
     {
         GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
     }
@@ -57,6 +84,69 @@ void UUSHealthComponent::HealUpdate()
 
 void UUSHealthComponent::SetHealth(float NewHealth)
 {
-    Health = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
-    OnHealthChanged.Broadcast(Health);
+    const auto NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+    const auto HealthDelta = NextHealth - Health;
+
+    Health = NextHealth;
+    OnHealthChanged.Broadcast(Health, HealthDelta);
 }
+
+bool UUSHealthComponent::TryToAddHealth(float HealthAmount)
+{
+    if (IsDead() || IsHealthFull()) return false;
+
+    SetHealth(Health + HealthAmount);
+    return true;
+}
+bool UUSHealthComponent::IsHealthFull() const
+{
+    return FMath::IsNearlyEqual(Health, MaxHealth);
+}
+
+void UUSHealthComponent::PlayCameraShake()
+{
+    if (IsDead()) return;
+    const auto Player = Cast<APawn>(GetOwner());
+    if (!Player) return;
+    const auto Controller = Player->GetController<APlayerController>();
+    if (!Controller || !Controller->PlayerCameraManager) return;
+
+    Controller->PlayerCameraManager->StartCameraShake(CameraShake);
+}
+
+void UUSHealthComponent::Killed(AController* KillerController)
+{
+    if (!GetWorld()) return;
+    const auto GameMode = Cast<AUSGameModeBase>(GetWorld()->GetAuthGameMode());
+    if (!GameMode) return;
+
+    const auto Player = Cast<APawn>(GetOwner());
+    const auto VictimController = Player ? Player->Controller : nullptr;
+
+    GameMode->Killed(KillerController, VictimController);
+}
+
+ float UUSHealthComponent::GetPointDamageModifier(AActor* DamagedActor, const FName& BoneName) 
+ {
+     const auto Character = Cast<ACharacter>(DamagedActor);
+     if (!Character || //
+          !Character->GetMesh() || //
+          !Character->GetMesh()->GetBodyInstance(BoneName))
+         return 1.0f;
+
+     const auto PhysMaterial = Character->GetMesh()->GetBodyInstance(BoneName)->GetSimplePhysicalMaterial();
+     if (!PhysMaterial || !DamageModifiers.Contains(PhysMaterial)) return 1.0f;
+
+     return DamageModifiers[PhysMaterial];
+ }
+
+ void UUSHealthComponent::ReportDamageEvent(float Damage, AController* InstigatedBy) 
+ {
+     if (!InstigatedBy || !GetOwner() || !InstigatedBy->GetPawn()) return;
+     UAISense_Damage::ReportDamageEvent(GetWorld(),//
+         GetOwner(),//
+         InstigatedBy->GetPawn(),//
+         Damage, //
+         InstigatedBy->GetPawn()->GetActorLocation(),//
+         GetOwner()->GetActorLocation());
+ }

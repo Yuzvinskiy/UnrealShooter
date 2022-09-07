@@ -2,6 +2,8 @@
 
 #include "Weapon/USLuncherWeapon.h"
 #include "Weapon/USProjectile.h"
+#include "Sound/SoundCue.h"
+#include "Kismet/GameplayStatics.h"
 
 void AUSLuncherWeapon::StartFire()
 {
@@ -11,8 +13,13 @@ void AUSLuncherWeapon::StartFire()
 
 void AUSLuncherWeapon::MakeShot()
 {
-    if (!GetWorld() || IsAmmoEmpty())
+    if (!GetWorld())
     {
+        return;
+    }
+    if (IsAmmoEmpty())
+    {
+        UGameplayStatics::SpawnSoundAtLocation(GetWorld(), NoAmmoSound, GetActorLocation());
         StopFire();
         return;
     }
@@ -40,5 +47,6 @@ void AUSLuncherWeapon::MakeShot()
         Projectile->FinishSpawning(SpawnTransform);
     }
     DecreaseAmmo();
-    StopFire();
+    SpawnMuzzleFX();
+    UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh, MuzzleSocketName);
 }

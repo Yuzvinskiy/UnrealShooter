@@ -4,25 +4,38 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "USCoreTypes.h"
 #include "USGameHUD.generated.h"
 
-/**
- * 
- */
+class UMyBaseWidget;
+
 UCLASS()
 class UNREALSHOOTER_API AUSGameHUD : public AHUD
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-	public:
+public:
     virtual void DrawHUD() override;
 
-	protected:
+protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
 
-	virtual void BeginPlay() override;
+      UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> PauseWidgetClass;
 
-    private: 
-	void DrawCrosshair();
+      UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> GameOverWidgetClass;
+
+    virtual void BeginPlay() override;
+
+private:
+    UPROPERTY()
+    TMap<EUSMatchState, UMyBaseWidget*> GameWidgets;
+
+    UPROPERTY()
+    UMyBaseWidget* CurrentWidget = nullptr;
+
+    void DrawCrosshair();
+    void OnMatchStateChanged(EUSMatchState State);
 };

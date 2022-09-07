@@ -4,6 +4,7 @@
 #include "Weapon/USBaseWeapon.h"
 #include "GameFramework/Character.h"
 #include "Animations/USEquipFinished.h"
+#include "Weapon/USBaseWeapon.h"
 
 UUSWeaponComponent::UUSWeaponComponent()
 {
@@ -44,6 +45,7 @@ void UUSWeaponComponent::SpawnWeapons()
         auto Weapon = GetWorld()->SpawnActor<AUSBaseWeapon>(WeaponClass);
         if (!Weapon) continue;
 
+       
         Weapon->SetOwner(Character);
         Weapons.Add(Weapon);
 
@@ -66,6 +68,7 @@ void UUSWeaponComponent::EquipWeapon(int32 WeaponIndex)
     if (CurrentWeapon)
     {
         CurrentWeapon->StopFire();
+        CurrentWeapon->Zoom(false);
         AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), WeaponArmorySocketName);
     }
     CurrentWeapon = Weapons[WeaponIndex];
@@ -138,6 +141,8 @@ bool UUSWeaponComponent::IsFiring() const
     return CurrentWeapon && CurrentWeapon->IsFiring();
 }
 
+
+
 bool UUSWeaponComponent::GetCurrentWeaponUIData(FWeaponUIData& UIData) const
 {
     if (CurrentWeapon)
@@ -156,4 +161,36 @@ bool UUSWeaponComponent::GetCurrentAmmoData(FAmmoData& CurrentAmmo) const
         return true;
     }
     return false;
+}
+
+bool UUSWeaponComponent::TryToAddAmmo(TSubclassOf<AUSBaseWeapon> WeaponType, int32 ClipsAmount)
+{
+    for (const auto Weapon : Weapons)
+    {
+        if (Weapon && Weapon->IsA(WeaponType))
+        {
+            return Weapon->TryToAddAmmo(ClipsAmount);
+        }
+    }
+    return false;
+}
+
+bool UUSWeaponComponent::NeedAmmo(TSubclassOf<AUSBaseWeapon> WeaponType)
+{
+    for (const auto Weapon : Weapons)
+    {
+        if (Weapon && Weapon->IsA(WeaponType))
+        {
+            return !Weapon->IsAmmoFull();
+        }
+    }
+    return false;
+}
+
+void UUSWeaponComponent::Zoom(bool Enabled) 
+{
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->Zoom(Enabled);
+    }
 }

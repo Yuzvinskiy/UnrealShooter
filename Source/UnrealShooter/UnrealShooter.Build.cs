@@ -8,18 +8,29 @@ public class UnrealShooter : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","Niagara", "PhysicsCore","GameplayTasks","NavigationSystem" });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });
 
-        PublicIncludePaths.AddRange(new string[] { 
+        PublicIncludePaths.AddRange(new string[] {
 
             "UnrealShooter/Public/Player",
-            "UnrealShooter/Public/Components", 
+            "UnrealShooter/Public/Components",
             "UnrealShooter/Public/Dev, " +
             "UnrealShooter/Public/Weapon",
             "UnrealShooter/Public/Ui",
-            "UnrealShooter/Public/Animations"
+            "UnrealShooter/Public/Animations",
+            "UnrealShooter/Public/Pickups",
+            "UnrealShooter/Public/Weapon/Components",
+            "UnrealShooter/Public/AI",
+            "UnrealShooter/Public/AI/Tasks",
+            "UnrealShooter/Public/AI/Services",
+            "UnrealShooter/Public/AI/EQS",
+            "UnrealShooter/Public/AI/Decorators",
+            "UnrealShooter/Public/Menu",
+            "UnrealShooter/Public/Sound"
+
+
 
         });
 

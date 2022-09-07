@@ -7,6 +7,7 @@
 #include "USLuncherWeapon.generated.h"
 
 class AUSProjectile;
+class USoundCue;
 
 UCLASS()
 class UNREALSHOOTER_API AUSLuncherWeapon : public AUSBaseWeapon
@@ -19,6 +20,9 @@ public:
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon");
     TSubclassOf<AUSProjectile> ProjectileClass;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* NoAmmoSound;
 
     virtual void MakeShot() override;
 };

@@ -6,17 +6,22 @@
 #include "Weapon/USBaseWeapon.h"
 #include "USRifleWeapon.generated.h"
 
-/**
- *
- */
+class UUSWeaponFXComponent;
+class UNiagaraComponent;
+class UNiagaraSystem;
+class UAudioComponent;
+
 UCLASS()
 class UNREALSHOOTER_API AUSRifleWeapon : public AUSBaseWeapon
 {
     GENERATED_BODY()
 
 public:
+    AUSRifleWeapon();
+
     virtual void StartFire() override;
     virtual void StopFire() override;
+    virtual void Zoom(bool Enabled) override;
 
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
@@ -28,11 +33,39 @@ protected:
      UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     float DamageAmount = 30.0f;
 
+     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    float FOVZoomAngle = 50.0f;
+
+      UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
+    UNiagaraSystem* TraceFX;
+
+      UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
+    FString TraceTargetName = "TraceTarget";
+
+      UPROPERTY(VisibleAnywhere, Category = "VFX")
+     UUSWeaponFXComponent* WeaponFXComponent;
+
+      virtual void BeginPlay() override;
     virtual void MakeShot() override;
     virtual bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const override;
 
 private:
     FTimerHandle ShotTimerHandle;
 
+    UPROPERTY()
+    UNiagaraComponent* MuzzleFXComponent;
+
+    UPROPERTY()
+    UAudioComponent* FireAudioComponent;
+
     void MakeDamage(const FHitResult& HitResult);
+
+    void InitFX();
+    void SetFXActive(bool IsActive);
+
+    void SpawnTraceFX(const FVector& TraceStart, const FVector& TraceEnd);
+
+    AController* GetController() const;
+
+    float DefaultCameraFOV = 90.0f;
 };
