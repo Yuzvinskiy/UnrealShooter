@@ -28,7 +28,7 @@ void UUSHealthComponent::BeginPlay()
     {
         ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &UUSHealthComponent::OnTakeAnyDamage);
         ComponentOwner->OnTakePointDamage.AddDynamic(this, &UUSHealthComponent::OnTakePointDamage);
-        ComponentOwner->OnTakeRadialDamage.AddDynamic(this, &UUSHealthComponent::OnTakeRadialDamage);
+        //ComponentOwner->OnTakeRadialDamage.AddDynamic(this, &UUSHealthComponent::OnTakeRadialDamage);
     }
 }
 void UUSHealthComponent::OnTakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation,
@@ -39,11 +39,12 @@ void UUSHealthComponent::OnTakePointDamage(AActor* DamagedActor, float Damage, c
     ApplyDamage(FinalDamage, InstigatedBy);
 }
 
-void UUSHealthComponent::OnTakeRadialDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, FVector Origin,
+/*void UUSHealthComponent::OnTakeRadialDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, FVector Origin,
     FHitResult HitInfo, class AController* InstigatedBy, AActor* DamageCauser)
 {
     ApplyDamage(Damage, InstigatedBy);
 }
+*/
 
 void UUSHealthComponent::OnTakeAnyDamage(
     AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)

@@ -85,7 +85,7 @@ private:
         const class UDamageType* DamageType,       //
         AActor* DamageCauser);
 
-    UFUNCTION()
+   /* UFUNCTION()
     void OnTakeRadialDamage(AActor* DamagedActor,  //
         float Damage,                              //
         const class UDamageType* DamageType,       //
@@ -93,4 +93,5 @@ private:
         FHitResult HitInfo,                        //
         class AController* InstigatedBy,           //
         AActor* DamageCauser);
+        */
 };
